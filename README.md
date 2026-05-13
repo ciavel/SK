@@ -188,29 +188,4 @@ This order keeps debugging simple.
 - Sending too much workspace content and hitting token limits.
 - Replacing files blindly without user confirmation.
 
----
 
-## Reality Check
-
-Yes—this can become a lightweight Codex/Copilot-style assistant.
-
-But production-level agent behavior needs:
-
-- robust patch/diff handling,
-- command execution safety,
-- retries/error handling,
-- context window management,
-- and clear user controls.
-
-Start small, keep each step working, then iterate.
-
----
-
-## Next Upgrades (When You’re Ready)
-
-- Tool system (terminal commands, install/run/test loops)
-- Cursor-style diff preview (instead of full overwrite)
-- Background diagnostics/refactor suggestions
-- Project indexing and context caching
-
-If you want, the next step can be: **"upgrade to agent mode"** with a concrete task list.
