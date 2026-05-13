@@ -1,0 +1,58 @@
+{
+  "name": "souimagery-codex-sidebar",
+  "displayName": "Souimagery Codex Sidebar",
+  "description": "Beginner-friendly VS Code sidebar AI assistant with streaming and image understanding.",
+  "version": "0.0.1",
+  "publisher": "souimagery",
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onView:souimagery.chatView"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "souimagery",
+          "title": "Codex",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "souimagery": [
+        {
+          "id": "souimagery.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Souimagery",
+      "properties": {
+        "souimagery.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "API key for https://api.souimagery.fun/v1. Keep this in your user settings, never hardcode it."
+        },
+        "souimagery.baseUrl": {
+          "type": "string",
+          "default": "https://api.souimagery.fun/v1"
+        },
+        "souimagery.model": {
+          "type": "string",
+          "default": "gpt-5.3-codex"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5"
+  }
+}
