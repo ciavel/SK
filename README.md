@@ -1,214 +1,191 @@
-# Souimagery VS Code Assistant (Beginner Friendly)
+# Codex-Style VS Code Sidebar Assistant (Beginner-Friendly)
 
-Yes — **it is possible to make your extension look and behave like the screenshot** (chat + live updates + file-aware coding help).  
-What you have now is a starter. The screenshot style is the next level: better UI + streaming + patch review + run/test loop.
+This project is a **simple VS Code extension** that can grow into a more powerful coding assistant.
 
-This guide shows exactly how to set that up on **Fedora Linux**.
-
----
-
-## 0) What “Phase 2” actually means
-
-Phase 2 = your extension stops being a simple chatbot and becomes an **IDE assistant**:
-
-1. **Streaming tokens** → AI types live.
-2. **File-aware context** → AI sees your active file.
-3. **Patch workflow** → AI proposes code edits, you apply/review.
-4. **Tool loop** → run commands (build/test/lint), then AI fixes errors.
-5. **Project context** → optional workspace indexing cache.
+If you are new, do not worry—we will do this step by step.
 
 ---
 
-## 1) Fedora terminal setup (exact commands)
+## What You Are Building
 
-### Install prerequisites
+You are building a sidebar chat assistant inside VS Code that can:
+
+- chat with an AI model,
+- read your current file for context,
+- stream responses token-by-token (typing effect),
+- and apply AI-generated edits.
+
+Think of this as a lightweight, self-hosted path toward a Copilot/Codex-style experience.
+
+---
+
+## Before You Start
+
+Make sure you have:
+
+- **Node.js + npm** installed
+- **VS Code** installed
+- basic terminal usage (copy/paste commands)
+
+---
+
+## Phase 1: Get the First Working Extension
+
+### 1) Install VS Code extension scaffolding tools
+
+Run this in terminal:
 
 ```bash
-sudo dnf update -y
-sudo dnf install -y git curl
-sudo dnf install -y nodejs npm
-node -v
-npm -v
+npm install -g yo generator-code
 ```
 
-> If Node is too old (< 20), install a newer one (nvm recommended).
-
-### Install VS Code extension scaffolding tools
+### 2) Create a new extension project
 
 ```bash
-npm install -g yo generator-code typescript
-```
-
-### Create extension
-
-```bash
-mkdir my-codex-sidebar
-cd my-codex-sidebar
 yo code
 ```
 
-Choose:
+Choose these options:
 
 - `TypeScript`
 - `New Webview Extension`
 
-### Run it
+### 3) Replace generated files
+
+Replace the generated:
+
+- `package.json` (with your sidebar-enabled config)
+- `src/extension.ts` (with your webview provider implementation)
+
+> Tip: Keep a backup copy of generated files in case you need to compare.
+
+### 4) Install dependencies and compile
+
+Inside the extension folder:
 
 ```bash
 npm install
 npm run compile
+```
+
+### 5) Launch Extension Development Host
+
+```bash
 code .
 ```
 
-In VS Code, press **F5**.
+Then press `F5` in VS Code.
 
-A new Extension Development Host opens with your sidebar extension.
+A new VS Code window opens with your extension loaded.
 
----
+You should see your sidebar view (for example: `🧠 Codex` → `Chat`).
 
-## 2) Configure API key safely (do NOT hardcode)
+### 6) Add extension settings (API config)
 
-Open:
-
-- `File` → `Preferences` → `Settings`
-- search `Open Settings (JSON)`
-
-Add:
+Open **Settings JSON** in VS Code and add:
 
 ```json
 {
-  "souimagery.apiKey": "YOUR_REAL_KEY",
+  "souimagery.apiKey": "YOUR_KEY",
   "souimagery.baseUrl": "https://api.souimagery.fun/v1",
   "souimagery.model": "gpt-5.3-codex"
 }
 ```
 
-Never commit real keys to Git.
+---
+
+## Phase 2: Upgrade It to Agent-Like Behavior
+
+Now that the extension runs, add features one at a time.
 
 ---
 
-## 3) How streaming works (Phase 2 feature #1)
+### 1) Streaming tokens (live typing)
 
-### Idea
+Why this matters:
 
-- Send request with `stream: true`.
-- Server sends chunks as SSE lines (`data: ...`).
-- Parse each line.
-- Send each token to webview (`postMessage`).
-- Webview appends token to output text.
+- users see responses appear live,
+- faster perceived performance,
+- feels like ChatGPT/Copilot style chat.
 
-### Backend flow
+Implementation idea:
 
-1. `fetch('/chat/completions', { stream: true })`
-2. `res.body.getReader()`
-3. decode chunks via `TextDecoder`
-4. split by `\n`
-5. parse `data: ...`
-6. emit `{ type: 'token', text: token }`
-
-### Frontend flow
-
-- listen to `window.addEventListener('message', ...)`
-- when message type is `token`, append text in chat bubble/preview
-
-This is what gives ChatGPT/Copilot-like typing.
+- send `stream: true` in your chat request,
+- read response chunks with `ReadableStream.getReader()`,
+- parse `data: ...` SSE lines,
+- forward each token to your webview with `webview.postMessage({ type: "token", text })`.
 
 ---
 
-## 4) How file-aware context works (Phase 2 feature #2)
+### 2) File-aware context (critical for code quality)
 
-### Idea
+Why this matters:
 
-Read the open editor file and prepend it to the prompt.
+- the model answers based on the actual file you are editing,
+- better suggestions, fewer generic answers.
 
-### Practical flow
+Implementation idea:
 
-1. `const editor = vscode.window.activeTextEditor`
-2. if exists, gather:
-   - `editor.document.fileName`
-   - `editor.document.getText()`
-3. build prompt like:
-   - `File: ...`
-   - file contents in triple backticks
-   - `User request: ...`
-4. send that in user message
-
-Now AI answers based on actual code, not generic guesses.
+- read `vscode.window.activeTextEditor`,
+- collect file name + full file text,
+- prepend this context to the user prompt.
 
 ---
 
-## 5) Make it look more like your screenshot
+### 3) Apply Patch button (real IDE power)
 
-Your screenshot has:
+Why this matters:
 
-- structured bullet summary
-- “verified commands” section
-- per-file change counts
-- review/apply controls
+- users can quickly apply AI output into editor,
+- reduces copy/paste friction.
 
-To approximate that in your extension:
+Implementation idea:
 
-1. Render Markdown in chat output.
-2. Ask model to respond with sections:
-   - `Summary`
-   - `Changes by file`
-   - `Commands to run`
-3. Add a “Run Command” action (with confirmation).
-4. Add “Apply Diff” and “Undo” actions.
-5. Track changed files and show a mini diff list.
+- add **Apply Patch** button in webview,
+- send `applyPatch` message to extension host,
+- replace current document text via `WorkspaceEdit`.
+
+> Beginner safety tip: start with full-file replace, then later move to diff-based patching.
 
 ---
 
-## 6) Terminal command loop (Fedora)
+### 4) Multi-file agent mode (advanced)
 
-Once assistant suggests fixes, run commands in terminal:
+Why this matters:
 
-```bash
-php -l admin/portal.php
-php -l admin/attendance-pending.php
-node --check src/admin/attendance-pending/main.jsx
-npm run build
-```
+- model can reason across project files,
+- useful for refactoring and bug fixing.
 
-Then paste output back into chat so assistant can propose next fixes.
+Implementation idea:
 
----
+- scan files with `vscode.workspace.findFiles("**/*.{ts,js,py}")`,
+- read each file,
+- send trimmed/summarized context to model,
+- include a system role like: *"You are a coding agent with full project access."*
 
-## 7) Recommended upgrade path (small steps)
-
-1. Stable chat send/receive
-2. Streaming tokens
-3. File-aware context
-4. Diff-only apply (not full overwrite)
-5. Command runner with allowlist
-6. Workspace indexing cache
-7. Better UI (cards, verification section, file counters)
-
-Do not jump to everything at once.
+> Important: Add limits. Sending entire large repositories can be expensive and slow.
 
 ---
 
-## 8) Common mistakes on Fedora
+## Suggested Build Order (Do This Exactly)
 
-- running F5 outside extension folder
-- forgetting `npm run compile`
-- missing API key in settings
-- hardcoding keys into source files
-- applying raw AI output without diff validation
+1. Sidebar loads in VS Code.
+2. Single prompt → single response works.
+3. Add streaming responses.
+4. Add current-file context.
+5. Add apply-patch behavior.
+6. Add multi-file support with token limits.
+
+This order keeps debugging simple.
 
 ---
 
-## 9) Direct answer to your question
+## Common Beginner Mistakes
 
-> “Is it possible to look like this? How does Phase 2 work? How to set up in Fedora terminal?”
+- Running `F5` outside the extension project folder.
+- Forgetting `npm run compile` before launch.
+- Not setting API key in settings.
+- Sending too much workspace content and hitting token limits.
+- Replacing files blindly without user confirmation.
 
-**Yes, possible.**  
-Your current project can evolve into that style. Start with the exact Fedora commands above, then add Phase 2 features in this order:
 
-- streaming,
-- file context,
-- diff apply,
-- command/test loop,
-- UI polish.
-
-If you want, next step I can generate a **drop-in `webview.html` + `extension.ts` pair** that gives a closer screenshot-like layout (summary blocks, verified command list, and file-change cards).
